@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness & Workout Planner</title>
+    <link rel="stylesheet" href="dashboard.css">
+    
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-title">
+                <span class="header-icon">💪</span>
+                <h1>Fitness Planner</h1>
+            </div>
+            <p class="subtitle">Plan your weekly workouts and track your progress</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('schedule')">
+                📅 Schedule
+            </button>
+            <button class="tab-btn" onclick="switchTab('exercises')">
+                💪 Exercises
+            </button>
+            <button class="tab-btn" onclick="switchTab('analytics')">
+                📊 Analytics
+            </button>
+        </div>
+
+        <!-- Schedule Tab -->
+        <div id="schedule-tab" class="tab-content active">
+            <div class="grid-2" style="grid-template-columns: 2fr 1fr;">
+                <div class="card">
+                    <h2 class="card-title">Weekly Schedule</h2>
+                    <div class="schedule-grid" id="schedule-grid"></div>
+                </div>
+                <div class="card">
+                    <h2 class="card-title">Add to <span id="selected-day-label">Monday</span></h2>
+                    <div class="exercise-list" id="add-exercise-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exercises Tab -->
+        <div id="exercises-tab" class="tab-content">
+            <div class="grid-2">
+                <div class="card">
+                    <h2 class="card-title">Add New Exercise</h2>
+                    <div class="form-group">
+                        <label class="form-label">Exercise Name</label>
+                        <input type="text" class="form-input" id="exercise-name" placeholder="e.g., Bench Press">
+                    </div>
+                    <div class="input-row">
+                        <div class="form-group">
+                            <label class="form-label">Sets</label>
+                            <input type="number" class="form-input" id="exercise-sets" value="3" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Reps</label>
+                            <input type="number" class="form-input" id="exercise-reps" value="10" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Duration (min)</label>
+                            <input type="number" class="form-input" id="exercise-duration" value="10" min="1">
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="addExercise()">
+                        ➕ Add Exercise
+                    </button>
+                </div>
+                <div class="card">
+                    <h2 class="card-title">Exercise Library</h2>
+                    <div class="exercise-list" id="exercise-library"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div id="analytics-tab" class="tab-content">
+            <div class="grid-4">
+                <div class="stat-card purple">
+                    <div class="stat-header">
+                        <div class="stat-title">Total Workouts</div>
+                        <div class="stat-icon">💪</div>
+                    </div>
+                    <div class="stat-value" id="total-workouts">0</div>
+                    <div class="stat-label">exercises/week</div>
+                </div>
+                <div class="stat-card blue">
+                    <div class="stat-header">
+                        <div class="stat-title">Active Days</div>
+                        <div class="stat-icon">📅</div>
+                    </div>
+                    <div class="stat-value" id="active-days">0</div>
+                    <div class="stat-label">days per week</div>
+                </div>
+                <div class="stat-card green">
+                    <div class="stat-header">
+                        <div class="stat-title">Weekly Duration</div>
+                        <div class="stat-icon">⏱️</div>
+                    </div>
+                    <div class="stat-value" id="weekly-duration">0</div>
+                    <div class="stat-label">minutes total</div>
+                </div>
+                <div class="stat-card orange">
+                    <div class="stat-header">
+                        <div class="stat-title">Exercises</div>
+                        <div class="stat-icon">📊</div>
+                    </div>
+                    <div class="stat-value" id="total-exercises">0</div>
+                    <div class="stat-label">in library</div>
+                </div>
+            </div>
+            <div class="card" style="margin-top: 20px;">
+                <h2 class="card-title">Weekly Breakdown</h2>
+                <div id="weekly-breakdown"></div>
+            </div>
+        </div>
+    </div>
+<script>
+        // Data Storage
+        let exercises = [
+            { id: 1, name: 'Push-ups', sets: 3, reps: 15, duration: 10 },
+            { id: 2, name: 'Squats', sets: 3, reps: 20, duration: 12 },
+            { id: 3, name: 'Plank', sets: 3, reps: 1, duration: 5 }
+            
+        ];
+
+        let weeklySchedule = {
+            Monday: [1],
+            Tuesday: [],
+            Wednesday: [2],
+            Thursday: [],
+            Friday: [1, 2],
+            Saturday: [3],
+            Sunday: []
+        };
+
+        let selectedDay = 'Monday';
+        const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+        // Tab Switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            if (tabName === 'analytics') {
+                updateAnalytics();
+            }
+        }
+
+        // Add Exercise
+        function addExercise() {
+            const name = document.getElementById('exercise-name').value.trim();
+            const sets = parseInt(document.getElementById('exercise-sets').value);
+            const reps = parseInt(document.getElementById('exercise-reps').value);
+            const duration = parseInt(document.getElementById('exercise-duration').value);
+
+            if (name) {
+                const exercise = {
+                    id: Date.now(),
+                    name,
+                    sets,
+                    reps,
+                    duration
+                };
+                exercises.push(exercise);
+                
+                document.getElementById('exercise-name').value = '';
+                document.getElementById('exercise-sets').value = '3';
+                document.getElementById('exercise-reps').value = '10';
+                document.getElementById('exercise-duration').value = '10';
+                
+                renderExerciseLibrary();
+                renderAddExerciseList();
+            }
+        }
+
+        // Remove Exercise
+        function removeExercise(id) {
+            exercises = exercises.filter(ex => ex.id !== id);
+            
+            // Remove from schedule
+            Object.keys(weeklySchedule).forEach(day => {
+                weeklySchedule[day] = weeklySchedule[day].filter(exId => exId !== id);
+            });
+            
+            renderAll();
+        }
+
+        // Add Exercise to Day
+        function addExerciseToDay(day, exerciseId) {
+            if (!weeklySchedule[day].includes(exerciseId)) {
+                weeklySchedule[day].push(exerciseId);
+                renderScheduleGrid();
+                renderAddExerciseList();
+            }
+        }
+
+        // Remove Exercise from Day
+        function removeExerciseFromDay(day, exerciseId) {
+            weeklySchedule[day] = weeklySchedule[day].filter(id => id !== exerciseId);
+            renderScheduleGrid();
+            renderAddExerciseList();
+        }
+
+        // Select Day
+        function selectDay(day) {
+            selectedDay = day;
+            document.getElementById('selected-day-label').textContent = day;
+            renderScheduleGrid();
+            renderAddExerciseList();
+        }
+
+        // Get Exercise by ID
+        function getExerciseById(id) {
+            return exercises.find(ex => ex.id === id);
+        }
+
+        // Render Schedule Grid
+        function renderScheduleGrid() {
+            const grid = document.getElementById('schedule-grid');
+            grid.innerHTML = '';
+            
+            daysOfWeek.forEach(day => {
+                const dayCard = document.createElement('div');
+                dayCard.className = 'day-card' + (day === selectedDay ? ' selected' : '');
+                dayCard.onclick = () => selectDay(day);
+                
+                const dayName = document.createElement('div');
+                dayName.className = 'day-name';
+                dayName.textContent = day;
+                dayCard.appendChild(dayName);
+                
+                const dayExercises = weeklySchedule[day];
+                
+                if (dayExercises.length === 0) {
+                    const restDay = document.createElement('div');
+                    restDay.className = 'rest-day';
+                    restDay.textContent = 'Rest day';
+                    dayCard.appendChild(restDay);
+                } else {
+                    dayExercises.forEach(exerciseId => {
+                        const exercise = getExerciseById(exerciseId);
+                        if (exercise) {
+                            const item = document.createElement('div');
+                            item.className = 'exercise-item';
+                            item.innerHTML = `
+                                <span>${exercise.name}</span>
+                                <button class="btn btn-danger" onclick="event.stopPropagation(); removeExerciseFromDay('${day}', ${exerciseId})">
+                                    🗑️
+                                </button>
+                            `;
+                            dayCard.appendChild(item);
+                        }
+                    });
+                }
+                
+                grid.appendChild(dayCard);
+            });
+        }
+
+        // Render Add Exercise List
+        function renderAddExerciseList() {
+            const list = document.getElementById('add-exercise-list');
+            list.innerHTML = '';
+            
+            exercises.forEach(exercise => {
+                const card = document.createElement('div');
+                card.className = 'exercise-card';
+                
+                const isAdded = weeklySchedule[selectedDay].includes(exercise.id);
+                
+                card.innerHTML = `
+                    <div class="exercise-header">
+                        <div>
+                            <div class="exercise-name">${exercise.name}</div>
+                        </div>
+                        <button class="btn btn-add" onclick="addExerciseToDay('${selectedDay}', ${exercise.id})" ${isAdded ? 'disabled' : ''}>
+                            ➕
+                        </button>
+                    </div>
+                    <div class="exercise-details">
+                        <div>${exercise.sets} sets × ${exercise.reps} reps</div>
+                        <div>⏱️ ${exercise.duration} min</div>
+                    </div>
+                `;
+                
+                list.appendChild(card);
+            });
+        }
+
+        // Render Exercise Library
+        function renderExerciseLibrary() {
+            const library = document.getElementById('exercise-library');
+            library.innerHTML = '';
+            
+            exercises.forEach(exercise => {
+                const card = document.createElement('div');
+                card.className = 'exercise-card';
+                
+                card.innerHTML = `
+                    <div class="exercise-header">
+                        <div>
+                            <div class="exercise-name">${exercise.name}</div>
+                        </div>
+                        <button class="btn btn-danger" onclick="removeExercise(${exercise.id})">
+                            🗑️
+                        </button>
+                    </div>
+                    <div class="exercise-details">
+                        <div><strong>Sets:</strong> ${exercise.sets}</div>
+                        <div><strong>Reps:</strong> ${exercise.reps}</div>
+                        <div><strong>Duration:</strong> ${exercise.duration} min</div>
+                    </div>
+                `;
+                
+                library.appendChild(card);
+            });
+        }
+
+        // Update Analytics
+        function updateAnalytics() {
+            // Total workouts
+            const totalWorkouts = Object.values(weeklySchedule).reduce((sum, day) => sum + day.length, 0);
+            document.getElementById('total-workouts').textContent = totalWorkouts;
+            
+            // Active days
+            const activeDays = Object.values(weeklySchedule).filter(day => day.length > 0).length;
+            document.getElementById('active-days').textContent = activeDays;
+            
+            // Weekly duration
+            let totalDuration = 0;
+            Object.values(weeklySchedule).forEach(day => {
+                day.forEach(exerciseId => {
+                    const exercise = getExerciseById(exerciseId);
+                    if (exercise) totalDuration += exercise.duration;
+                });
+            });
+            document.getElementById('weekly-duration').textContent = totalDuration;
+            
+            // Total exercises
+            document.getElementById('total-exercises').textContent = exercises.length;
+            
+            // Weekly breakdown
+            renderWeeklyBreakdown();
+        }
+
+        // Render Weekly Breakdown
+        function renderWeeklyBreakdown() {
+            const breakdown = document.getElementById('weekly-breakdown');
+            breakdown.innerHTML = '';
+            
+            daysOfWeek.forEach(day => {
+                const dayExercises = weeklySchedule[day];
+                const dayDuration = dayExercises.reduce((sum, id) => {
+                    const ex = getExerciseById(id);
+                    return sum + (ex ? ex.duration : 0);
+                }, 0);
+                
+                const item = document.createElement('div');
+                item.className = 'breakdown-item';
+                
+                item.innerHTML = `
+                    <div class="breakdown-header">
+                        <div class="breakdown-day">${day}</div>
+                        <div class="breakdown-stats">
+                            <span>${dayExercises.length} exercises</span>
+                            <span>⏱️ ${dayDuration} min</span>
+                        </div>
+                    </div>
+                    ${dayExercises.length > 0 ? `
+                        <div class="tag-container">
+                            ${dayExercises.map(id => {
+                                const ex = getExerciseById(id);
+                                return ex ? `<span class="tag">${ex.name}</span>` : '';
+                            }).join('')}
+                        </div>
+                    ` : ''}
+                `;
+                
+                breakdown.appendChild(item);
+            });
+        }
+
+        // Render All
+        function renderAll() {
+            renderScheduleGrid();
+            renderAddExerciseList();
+            renderExerciseLibrary();
+            updateAnalytics();
+        }
+
+        // Initialize
+        renderAll();
+        </script>
+        
+</body>
+</html>

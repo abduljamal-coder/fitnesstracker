@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>signup FitTrack</title>
+    <link rel="stylesheet" href="signup.css" />
+  </head>
+  <body>
+    <div class="form">
+      <h1>Sign Up for FitTrack</h1>
+      <div id="errormsg" style="color: red; margin-bottom: 10px"></div>
+      <form method="POST" id="signupform">
+        <label for="username">Username:</label><br />
+        <input type="text" id="username" name="username" required /><br /><br />
+
+        <label for="email">Email:</label><br />
+        <input type="email" id="email" name="email" required /><br /><br />
+
+        <label for="password">Password:</label><br>
+        <input  type="password" id="password" name="password" required minlength="8"> <br>
+
+        <label for="confirmpassword">confirm password:</label><br>
+       <input type="password" id="confirmpassword" name="confirmpassword" required ><br>
+
+        <button type="submit" class="submitbtn">Sign Up</button>
+        <p>Already have an account? <a href="login.html">Login</a></p>
+      </form>
+    </div>
+
+    <script src="signup.js"></script>
+  </body>
+</html>
